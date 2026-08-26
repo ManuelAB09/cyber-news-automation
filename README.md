@@ -1,4 +1,4 @@
-# 🛡️ Automated Cyber Threat Intel RSS Feed for Discord
+# Automated Cyber Threat Intel RSS Feed for Discord
 
 An automated, serverless Python application that aggregates threat intelligence, vulnerability research, and security news from **17 high-quality cybersecurity RSS feeds** and posts them directly to a Discord channel using webhooks.
 
