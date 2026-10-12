@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trellix High-Level Triage</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 40px 20px; 
+            max-width: 1000px; 
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .container {
+            background: var(--card);
+            padding: 35px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+        
+        h2 { margin-top: 0; color: #1e293b; margin-bottom: 30px; }
+
+        .upload-zone {
+            border: 2px dashed #94a3b8;
+            border-radius: 8px;
+            padding: 50px 20px;
+            text-align: center;
+            background-color: #f8fafc;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .upload-zone.dragover {
+            border-color: var(--primary);
+            background-color: #eff6ff;
+        }
+        .upload-zone input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0; left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .btn {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            float: right;
+            transition: background 0.2s;
+        }
+        .btn:hover { background-color: #059669; }
+
+        textarea {
+            width: 100%;
+            height: 280px;
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #f1f5f9;
+            box-sizing: border-box;
+            font-size: 13px;
+            color: #1e293b;
+            line-height: 1.5;
+            resize: vertical;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+        th { 
+            background-color: #f8fafc; 
+            font-weight: 600; 
+            color: #334155;
+            width: 22%;
+            border-right: 1px solid var(--border);
+        }
+        
+        code { 
+            background-color: #f1f5f9; 
+            color: #0f172a; 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            border: 1px solid #cbd5e1;
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+
+        ul { margin: 0; padding-left: 20px; }
+        li { margin-bottom: 16px; }
+        li:last-child { margin-bottom: 0; }
+
+        .score-badge { 
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 700;
+            margin-left: 8px;
+            display: inline-block;
+        }
+
+        .rule-badge {
+            background-color: #e2e8f0;
+            color: #334155;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 700;
+            margin-right: 8px;
+            display: inline-block;
+            border: 1px solid #cbd5e1;
+        }
+
+        .dynamic-field { 
+            display: block; 
+            margin-bottom: 8px; 
+        }
+
+        .most-common-text { 
+            display: block;
+            font-size: 0.95em; 
+            color: var(--text-main); 
+            margin-top: 10px; 
+            padding-left: 12px;
+            border-left: 2px solid #cbd5e1;
+        }
+        
+        .most-common-list {
+            margin-top: 6px;
+            padding-left: 20px;
+            list-style-type: circle;
+        }
+        
+        .most-common-list li {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Trellix Alerts: High-Level Triage</h2>
+        
+        <div class="upload-zone" id="dropZone">
+            <div style="font-weight: 600; font-size: 18px; color: var(--text-main);">Click or Drag & Drop JSON file here</div>
+            <input type="file" id="fileInput" accept=".json" />
+        </div>
+
+        <div id="errorMsg" style="color: var(--danger); font-weight: 600; display: none; margin-top: 15px;"></div>
+
+        <div id="results" style="display: none; margin-top: 40px;">
+            <div style="overflow: hidden; margin-bottom: 15px;">
+                <h3 style="float: left; margin: 0;">Markdown Table</h3>
+                <button class="btn" onclick="copyMarkdown()" id="copyBtn">Copy</button>
+            </div>
+            <textarea id="mdOutput" readonly></textarea>
+
+            <h3 style="margin-top: 40px;">Preview</h3>
+            <div id="visualPreview">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function formatIPListMD(ipData, labelPrefix) {
+            if (!ipData) return "";
+            if (Array.isArray(ipData)) {
+                return ipData.map((ip, index) => `**${labelPrefix} ${index + 1}:** \`${ip}\``).join('<br>');
+            }
+            return `**${labelPrefix}:** \`${ipData}\``;
+        }
+
+        function formatIPListHTML(ipData, labelPrefix) {
+            if (!ipData) return "";
+            if (Array.isArray(ipData)) {
+                return ipData.map((ip, index) => `<span class="dynamic-field"><strong>${labelPrefix} ${index + 1}:</strong> <code>${ip}</code></span>`).join('');
+            }
+            return `<span class="dynamic-field"><strong>${labelPrefix}:</strong> <code>${ipData}</code></span>`;
+        }
+
+        function parseHighLevelTrellix(data) {
+            const org = data.organization || "N/A";
+            const alertId = data.id || "N/A";
+            const globalRiskScore = data.risk_score || "N/A";
+            const tags = Array.isArray(data.tags) ? data.tags.join(', ') : "N/A";
+
+            const detail = data.alert_type_details?.detail || {};
+            const severity = (detail.severity || data.severity || "N/A").toUpperCase();
+            const application = detail.application || data.alert_type?.name || "Unknown Alert Type";
+            const analyticScore = detail.score || "N/A";
+            
+            const username = detail.username || detail.targetusername || "N/A";
+            
+            const srcIpsMD = formatIPListMD(detail.srcipv4, "Src IP");
+            const dstIpsMD = formatIPListMD(detail.dstipv4, "Dst IP");
+            const srcIpsHTML = formatIPListHTML(detail.srcipv4, "Src IP");
+            const dstIpsHTML = formatIPListHTML(detail.dstipv4, "Dst IP");
+
+            let ipStrMD = [srcIpsMD, dstIpsMD].filter(Boolean).join('<br>');
+            let ipStrHTML = [srcIpsHTML, dstIpsHTML].filter(Boolean).join('');
+            if (!ipStrMD) ipStrMD = "N/A";
+            if (!ipStrHTML) ipStrHTML = "N/A";
+
+            const firstSeen = detail.firstseen || data.first_event_at;
+            const lastSeen = detail.lastseen || data.last_event_at;
+            
+            let timelinePartsMD = [];
+            let timelinePartsHTML = [];
+            
+            if (firstSeen) {
+                timelinePartsMD.push(`**First Seen:** ${firstSeen}`);
+                timelinePartsHTML.push(`<span class="dynamic-field"><strong>First Seen:</strong> ${firstSeen}</span>`);
+            }
+            if (lastSeen) {
+                timelinePartsMD.push(`**Last Seen:** ${lastSeen}`);
+                timelinePartsHTML.push(`<span class="dynamic-field"><strong>Last Seen:</strong> ${lastSeen}</span>`);
+            }
+
+            const timelineMD = timelinePartsMD.length > 0 ? timelinePartsMD.join('<br>') : "N/A";
+            const timelineHTML = timelinePartsHTML.length > 0 ? timelinePartsHTML.join('') : "N/A";
+
+            let reasonsListMD = [];
+            let reasonsListHTML = [];
+            const explanations = detail.explanation || {};
+            
+            if (typeof explanations === 'object' && !Array.isArray(explanations)) {
+                for (const key in explanations) {
+                    if (explanations[key]?.reason) {
+                        const reasonTxt = explanations[key].reason;
+                        const scoreVal = explanations[key].score;
+                        const ruleVal = explanations[key].rule;
+                        const mostCommon = explanations[key].most_common;
+
+                        const mdRule = ruleVal ? `**[Rule: ${ruleVal}]** ` : "";
+                        const htmlRule = ruleVal ? `<span class="rule-badge">${ruleVal}</span>` : "";
+
+                        const mdScore = scoreVal !== undefined ? ` **[Score: ${scoreVal}]**` : "";
+                        const htmlScore = scoreVal !== undefined ? ` <span class="score-badge">Score: ${scoreVal}</span>` : "";
+
+                        let mdTxt = `${mdRule}${reasonTxt}${mdScore}`;
+                        let htmlTxt = `${htmlRule}${reasonTxt}${htmlScore}`;
+
+                        if (Array.isArray(mostCommon) && mostCommon.length > 0) {
+                            const mdListItems = mostCommon.map(item => `&nbsp;&nbsp;&nbsp;&nbsp;◦ ${item}`).join('<br>');
+                            mdTxt += `<br><br>&nbsp;&nbsp;&nbsp;&nbsp;**Most common:**<br>${mdListItems}`;
+                            
+                            const htmlListItems = mostCommon.map(item => `<li>${item}</li>`).join('');
+                            htmlTxt += `<div class="most-common-text"><strong>Most common:</strong><ul class="most-common-list">${htmlListItems}</ul></div>`;
+                        }
+
+                        reasonsListMD.push(mdTxt);
+                        reasonsListHTML.push(`<li>${htmlTxt}</li>`);
+                    }
+                }
+            } else if (Array.isArray(explanations)) {
+                explanations.forEach(exp => {
+                    const txt = exp.reason || JSON.stringify(exp);
+                    reasonsListMD.push(`${txt}`);
+                    reasonsListHTML.push(`<li>${txt}</li>`);
+                });
+            }
+
+            let mitreTech = [];
+            let mitreTac = [];
+            const mitreInfo = data.mitre_info || {};
+            
+            if (mitreInfo.techniques?.results) {
+                mitreTech = mitreInfo.techniques.results.map(t => 
+                    t.is_sub_tech ? `${t.id} (Sub-technique: Yes)` : t.id
+                );
+            }
+            if (mitreInfo.tactics?.results) {
+                mitreTac = mitreInfo.tactics.results.map(t => 
+                    t.is_sub_tech ? `${t.id} (Sub-technique: Yes)` : t.id
+                );
+            }
+
+            const ignoreKeys = [
+                'severity', 'application', 'score', 'username', 'targetusername', 
+                'srcipv4', 'dstipv4', 'firstseen', 'lastseen', 'first_event_at', 
+                'last_event_at', 'explanation', 'class', 'meta_cbid', 'score_detail'
+            ];
+            let dynamicMD = [];
+            let dynamicHTML = [];
+
+            for (const [key, value] of Object.entries(detail)) {
+                if (!ignoreKeys.includes(key) && value !== null && value !== "") {
+                    if (typeof value !== 'object') {
+                        dynamicMD.push(`**${key}:** \`${value}\``);
+                        dynamicHTML.push(`<span class="dynamic-field"><strong>${key}:</strong> <code>${value}</code></span>`);
+                    } else if (Array.isArray(value) && typeof value[0] !== 'object') {
+                        dynamicMD.push(`**${key}:** \`${value.join(', ')}\``);
+                        dynamicHTML.push(`<span class="dynamic-field"><strong>${key}:</strong> <code>${value.join(', ')}</code></span>`);
+                    }
+                }
+            }
+
+            const extraContextMD = dynamicMD.length > 0 ? dynamicMD.join('<br>') : "N/A";
+            const extraContextHTML = dynamicHTML.length > 0 ? dynamicHTML.join('') : "N/A";
+            
+            const reasonsMD = reasonsListMD.length > 0 ? reasonsListMD.join('<br><br>• ') : "No explanations provided.";
+            const reasonsHTML = reasonsListHTML.length > 0 ? `<ul>${reasonsListHTML.join('')}</ul>` : "No explanations provided.";
+            
+            const mitreMD = `**Techniques:** ${mitreTech.length ? mitreTech.join(', ') : 'None'}<br>**Tactics:** ${mitreTac.length ? mitreTac.join(', ') : 'None'}`;
+            const mitreHTML = `<span class="dynamic-field"><strong>Techniques:</strong> ${mitreTech.length ? mitreTech.join(', ') : 'None'}</span><span class="dynamic-field"><strong>Tactics:</strong> ${mitreTac.length ? mitreTac.join(', ') : 'None'}</span>`;
+
+            const mdTable = `### Alert Summary
+
+| Context | Details |
+| :--- | :--- |
+| **Alert Details** | **Type:** \`${application}\`<br>**ID:** \`${alertId}\`<br>**Org:** \`${org}\` |
+| **Risk & Severity** | **${severity}** (Analytic Score [Sum of anomalies]: ${analyticScore} / Global Risk: ${globalRiskScore}) |
+| **Main Entities** | **User:** **${username}**<br>${ipStrMD} |
+| **Specific Context** | ${extraContextMD} |
+| **Anomaly Reasons** | • ${reasonsMD} |
+| **Timeline & Tags** | ${timelineMD}<br><br>**Tags:** ${tags} |
+| **MITRE ATT&CK** | ${mitreMD} |
+`;
+
+            const htmlTable = `
+                <table>
+                    <tbody>
+                        <tr><th>Alert Details</th><td><span class="dynamic-field"><strong>Type:</strong> <code>${application}</code></span><span class="dynamic-field"><strong>ID:</strong> <code>${alertId}</code></span><span class="dynamic-field"><strong>Org:</strong> <code>${org}</code></span></td></tr>
+                        <tr><th>Risk & Severity</th><td><span style="color: #b91c1c; font-weight: bold;">${severity}</span> (Analytic Score [Sum of anomalies]: ${analyticScore} / Global Risk: ${globalRiskScore})</td></tr>
+                        <tr><th>Main Entities</th><td><span class="dynamic-field"><strong>User:</strong> ${username}</span>${ipStrHTML}</td></tr>
+                        <tr><th>Specific Context</th><td>${extraContextHTML}</td></tr>
+                        <tr><th>Anomaly Reasons</th><td>${reasonsHTML}</td></tr>
+                        <tr><th>Timeline & Tags</th><td>${timelineHTML}<br><span class="dynamic-field"><strong>Tags:</strong> ${tags}</span></td></tr>
+                        <tr><th>MITRE ATT&CK</th><td>${mitreHTML}</td></tr>
+                    </tbody>
+                </table>
+            `;
+
+            return { markdown: mdTable, html: htmlTable };
+        }
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const resultsDiv = document.getElementById('results');
+        const errorMsg = document.getElementById('errorMsg');
+        const mdOutput = document.getElementById('mdOutput');
+        const visualPreview = document.getElementById('visualPreview');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) processFile(files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) processFile(e.target.files[0]);
+        });
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const jsonData = JSON.parse(evt.target.result);
+                    const outputs = parseHighLevelTrellix(jsonData);
+                    
+                    errorMsg.style.display = 'none';
+                    mdOutput.value = outputs.markdown;
+                    visualPreview.innerHTML = outputs.html;
+                    resultsDiv.style.display = 'block';
+                    fileInput.value = '';
+                } catch (e) {
+                    resultsDiv.style.display = 'none';
+                    errorMsg.textContent = "Error reading JSON. Please verify the file format.";
+                    errorMsg.style.display = 'block';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function copyMarkdown() {
+            mdOutput.select();
+            document.execCommand('copy');
+            const btn = document.getElementById('copyBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "Copied!";
+            setTimeout(() => btn.innerHTML = originalText, 2000);
+        }
+    </script>
+</body>
+</html>
