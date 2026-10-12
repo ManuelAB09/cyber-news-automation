@@ -1,6 +1,6 @@
-# Automated Cyber Threat Intel RSS Feed for Discord
+# Automated Cyber Threat Intel RSS Feed for Discord and Trellix Alerts Formatting to MD and HTML
 
-An automated, serverless Python application that aggregates threat intelligence, vulnerability research, and security news from **17 high-quality cybersecurity RSS feeds** and posts them directly to a Discord channel using webhooks.
+An automated, serverless Python application that aggregates threat intelligence, vulnerability research, and security news from **17 high-quality cybersecurity RSS feeds** and posts them directly to a Discord channel using webhooks and a separate tool that allows to perform an initial triage from Trellix Alerts by converting them to MD and HTML summarizing the important info.
 
 Powered by **GitHub Actions**, it runs fully in the cloud 24/7 with zero hosting costs, featuring intelligent HTML cleanup, multi-source rate limit handling, and isolated historical tracking per feed.
 
@@ -37,6 +37,7 @@ The bot monitors 17 major cybersecurity blogs and vulnerability portals:
 ├── main.py                  # Primary Python script for parsing and sending RSS feeds
 ├── requirements.txt         # Python dependencies (feedparser, requests)
 ├── history.json             # Isolated historical cache (auto-updated by GitHub Actions)
+├── JsonTrellixAlertsToMd.html             # High-Level Triage Tool
 └── README.md                # Project documentation
 ```
 
